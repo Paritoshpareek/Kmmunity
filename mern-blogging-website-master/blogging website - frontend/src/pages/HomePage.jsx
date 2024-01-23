@@ -34,7 +34,6 @@ const HomePage = () => {
                     page,
                     countRoute: "/all-latest-blogs-count"
                 })
-                console.log(formatedData)
                 setBlogs(formatedData);
             })
             .catch(err => {
@@ -46,15 +45,15 @@ const HomePage = () => {
 
         axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs", { tag: pageState, page })
             .then(async ({ data }) => {
-
                 let formatedData = await filterPaginationData({
                     state: blogs,
                     data: data.blogs,
                     page,
                     countRoute: "/search-blogs-count",
                     data_to_send: { tag: pageState }
+
                 })
-                setBlogs(formatedData);;
+                setBlogs(formatedData);
             })
             .catch(err => {
                 console.log(err);
@@ -81,8 +80,7 @@ const HomePage = () => {
         setPageState(category);
     }
 
-
-    // use effect 
+    // use effect  
     useEffect(() => {
         activeTabRef.current.click();
         if (pageState == "home") {
@@ -97,6 +95,7 @@ const HomePage = () => {
         // virtually clicking on home feild to update the hr  element in case pagestate gets updated (using activetabref)so we will run useeffect whenever pagestate chages but will not run fetchlatest and fetctrending blog 
 
     }, [pageState])
+
     return (
         <AnimationWrapper>
             <section className="h-cover flex justify-center gap-10">
@@ -117,7 +116,7 @@ const HomePage = () => {
                                     )
 
                             }
-                            <LoadMoreDataBtn state={blogs} fetchDataFun={(pageState == "home" ? fetchLatestBlogs : fetchBlogsByCategory)} />
+                            <LoadMoreDataBtn state={blogs} fetchDataFun={(pageState === "home" ? fetchLatestBlogs : fetchBlogsByCategory)} />
 
 
                         </>
@@ -144,7 +143,8 @@ const HomePage = () => {
                     {/* stories and tags button  */}
                     <div className="flex flex-col gap-10 ">
                         <div>
-                            <h1 className="font-medium text-xl mb-8 ">Stories from all interests</h1>
+                            <h1 className="font-medium text-xl mb-8 ">Stories from all interests  <i className="fi fi fi-sr-game"></i></h1>
+
                             {/* filters */}
 
                             <div className="flex gap-3 flex-wrap">

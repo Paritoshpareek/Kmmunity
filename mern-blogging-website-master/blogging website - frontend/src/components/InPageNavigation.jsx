@@ -6,7 +6,12 @@ const InPageNavigation = ({ routes, defaultHidden = [], defaultActiveIndex = 0, 
 
     activeTabLineRef = useRef();
     activeTabRef = useRef();
-    let [inPageNavIndex, setInPageNavIndex] = useState(defaultActiveIndex);
+    let [inPageNavIndex, setInPageNavIndex] = useState(null);
+
+    let [isresizeEvent, setIsResizeEvent] = useState(false);
+
+    let [width, setWidth] = useState(window.innerWidth);
+
     const changePageState = (btn, i) => {
 
         let { offsetWidth, offsetLeft } = btn;
@@ -16,9 +21,21 @@ const InPageNavigation = ({ routes, defaultHidden = [], defaultActiveIndex = 0, 
     }
 
     useEffect(() => {
-        changePageState(activeTabRef.current, defaultActiveIndex)
+        if (width > 767 && inPageNavIndex != defaultActiveIndex) {
+            changePageState(activeTabRef.current, defaultActiveIndex)
+        }
 
-    }, [])
+        if (!isresizeEvent) {
+            window.addEventListener('resize', () => {
+                if (!isresizeEvent) {
+                    setIsResizeEvent(true);
+                }
+                setWidth(window.innerWidth)
+
+            })
+        }
+
+    }, [width])
 
 
     return (
@@ -37,7 +54,7 @@ const InPageNavigation = ({ routes, defaultHidden = [], defaultActiveIndex = 0, 
                         )
                     })
                 }
-                <hr ref={activeTabLineRef} className="absolute bottom-0 duration-400" />
+                <hr ref={activeTabLineRef} className="absolute bottom-0 duration-400 border-dark-grey " />
             </div>
 
             {Array.isArray(children) ? children[inPageNavIndex] : children}

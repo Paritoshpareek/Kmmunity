@@ -5,8 +5,6 @@ const BlogPostCard = ({ content, author }) => {
     let { publishedAt, tags, title, des, banner, activity: { total_likes }, blog_id: id } = content;
     let { fullname, profile_img, username } = author;
 
-
-
     return (
         <Link to={`/blog/${id}`} className="flex gap-8 items-center border-b border-grey pb-5 mb-4">
             <div className="w-full">
@@ -25,7 +23,7 @@ const BlogPostCard = ({ content, author }) => {
                         <i className="fi fi-rr-heart text-xl"></i>
                         {total_likes}
                     </span>
-                    <span className="ml-3 flex items-center "><p>13 min read</p></span>
+                    <span className="ml-3 flex items-center "><p className="line-clamp-1 "  >13 min read</p></span>
                 </div>
 
             </div>

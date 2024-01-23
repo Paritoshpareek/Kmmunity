@@ -9,14 +9,15 @@ const AboutUser = ({ className, bio, social_links, joinedAt }) => {
             <div className="flex gap-x-7 gap-y-2 flex-wrap my-7 items-center text-dark-grey">
                 {
                     Object.keys(social_links).map((key) => {
-                        console.log(key)
+
                         let link = social_links[key];
                         return link ? <Link to={link} key={key} target="_blank">
                             <i className={
                                 "fi " +
                                 (key == 'website' ? ' fi-rr-globe ' : ` fi-brands-${key == 'twitter' ? 'twitter-alt-circle ' : key}`)
-                                + ` text-2xl transition-transform hover:text-${key == 'website' ? 'purple' : key}`
-                            }></i></Link> : "";
+                                + ` text-2xl `
+                            }></i>
+                        </Link> : "";
                     })
                 }
             </div>
@@ -26,4 +27,3 @@ const AboutUser = ({ className, bio, social_links, joinedAt }) => {
 }
 export default AboutUser;
 
-// ` text-2xl transition-transform hover:text-purple`

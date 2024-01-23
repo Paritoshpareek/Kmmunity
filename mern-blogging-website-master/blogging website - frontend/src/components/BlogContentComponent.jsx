@@ -35,22 +35,19 @@ const List = ({ style, items }) => {
 }
 const Embed = ({ data }) => {
     if (data.service === 'youtube' || data.service === 'twitter') {
+
         return (
-            <div className='flex flex-col justify-center items-center aspect-w-16 aspect-h-9 my-5'>
+            <div className='flex flex-col justify-center items-center my-5 overflow-hidden'>
                 <iframe
                     title={`${data.service} Embed`}
                     width={data.width}
                     height={data.height}
-                    src={data.embed}
+                    src={data.service === 'twitter' ? `${data.embed}&theme=dark` : data.embed}
                     allowFullScreen
-                    data-theme="dark"
-                    className={`border-none rounded-lg shadow-md`}
+                    className={`border-none rounded-lg shadow-md w-full h-full ${data.service === 'youtube' ? 'aspect-video' : 'aspect-square'}`}
                 ></iframe>
-                <p className="w-full text-center my-3 md:mb-12 text-base md:text-lg lg:text-xl text-dark-grey">{data.caption}</p>
+                <p className="w-full text-center my-3 md:mb-12 text-base md:text-lg lg:text-xl text-dark-grey ">{data.caption}</p>
             </div>
-
-
-
         );
     }
     return (
@@ -59,9 +56,19 @@ const Embed = ({ data }) => {
         </div>
     );
 };
+const Warning = ({ title, message }) => {
+    return (
+        <div className=" bg-red/10 p-3 pl-5   border-l-4 border-red mb-4">
+            <p className="text-xl font-bold mb-2">⚠️ {title}</p>
+            <p className="text-gray-700">{message}</p>
+        </div>
+    )
+}
 
 const BlogContent = ({ block }) => {
+
     let { type, data } = block;
+
     if (type == "paragraph") {
         return <p dangerouslySetInnerHTML={{ __html: data.text }}></p>
     }
@@ -83,8 +90,14 @@ const BlogContent = ({ block }) => {
     } if (type == "embed") {
         return <Embed data={data} />
     }
+    if (type == "delimiter") {
+        return <p className="text-2xl font-bold flex items-center justify-center tracking-wide">* * *</p>
+    }
+    if (type == "warning") {
+        return <Warning title={data.title} message={data.message} />
+    }
     else {
-        return <h1>thisis a block</h1>
+        return <h1>The block is not rendered because it is of invalid type</h1>
     }
 }
 export default BlogContent;

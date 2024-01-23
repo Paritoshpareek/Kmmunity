@@ -1,14 +1,18 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useContext, useEffect, useState } from 'react';
-import logo from "../imgs/logo.png";
+import lightLogo from "../imgs/logo-light.png";
+import darkLogo from "../imgs/logo-dark.png";
 import AnimationWrapper from "../common/page-animation";
-import defaultBanner from "../imgs/blog banner.png";
+import lightBanner from "../imgs/blog banner light.png";
+import darkBanner from "../imgs/blog banner dark.png";
 import { Toaster, toast } from 'react-hot-toast';
 import { EditorContext } from "../pages/editor.pages";
 import EditorJS from "@editorjs/editorjs";
 import { tools } from "./ToolsComponent"
 import axios from "axios";
-import { UserContext } from "../App";
+import { ThemeContext, UserContext } from "../App";
+
+
 
 
 const BlogEditor = () => {
@@ -17,6 +21,7 @@ const BlogEditor = () => {
     let { blog, blog: { title, banner, content, tags, des }, setBlog, textEditor, setTextEditor, setEditorState } = useContext(EditorContext)
 
     let { userAuth: { access_token } } = useContext(UserContext)
+    let { theme } = useContext(ThemeContext)
 
     let { blog_id } = useParams();
 
@@ -29,7 +34,7 @@ const BlogEditor = () => {
                 holder: "textEditor",
                 data: Array.isArray(content) ? content[0] : content,
                 tools: tools,
-                placeholder: "Let's  contribute to the kmmunity",
+                placeholder: "Let's  contribute to the kommunity",
             }))
         }
 
@@ -81,14 +86,14 @@ const BlogEditor = () => {
 
     const handleImageError = (e) => {
         let img = e.target
-        img.src = defaultBanner;
+        img.src = theme == 'light' ? lightBanner : darkBanner;
     }
 
     const handlePublishEvent = () => {
 
-        // if (!banner.length) {
-        //     return toast.error("Upload a blog banner to publish");
-        // }
+        if (!banner.length) {
+            return toast.error("Upload a blog banner to publish");
+        }
 
         if (!title.length) {
             return toast.error("Upload a blog title to publish");
@@ -136,7 +141,7 @@ const BlogEditor = () => {
                         toast.success("Saved👍");
 
                         setTimeout(() => {
-                            navigate("/")
+                            navigate("/dashboard/blogs?tab=draft")
                         }, 500);
                     })
                     .catch(({ response }) => {
@@ -154,7 +159,7 @@ const BlogEditor = () => {
         <>
             <nav className="navbar" >
                 <Link to="/" className="flex-none w-10">
-                    <img src={logo} />
+                    <img src={theme == 'light' ? darkLogo : lightLogo} />
                 </Link>
                 <p className="max-md:hidden text-black line-clamp-1 w-full " >{title.length ? title : "New Blog"}</p>
 
@@ -189,7 +194,7 @@ const BlogEditor = () => {
                         <textarea
                             defaultValue={title}
                             placeholder="Blog Title"
-                            className="text-4xl font-medium w-full h-20 outline-none resize-none mt-10 leading-tight placeholder:opacity-40 "
+                            className="text-4xl font-medium w-full h-20 outline-none resize-none mt-10 leading-tight placeholder:opacity-40 bg-white"
                             onKeyDown={handleTitleKeyDown}
                             onChange={handleTitleChange}
                         >
@@ -207,75 +212,3 @@ const BlogEditor = () => {
 
 export default BlogEditor;
 
-// --old file---
-// import { Link } from "react-router-dom";
-// import { useState } from 'react'
-// import logo from "../imgs/logo.png"
-// import AnimationWrapper from "../common/page-animation";
-// import defaultBanner from "../imgs/blog banner.png";
-// import { Toaster, toast } from 'react-hot-toast'
-
-// const BlogEditor = () => {
-
-//     const [image, setImage] = useState(null);
-
-//     const handleImageUpload = async (e) => {
-//         const file = e.target.files[0];
-//         if (file) {
-//             const formData = new FormData();
-//             formData.append('file', file);
-//             formData.append('upload_preset', 'xbvxvawe'); // Replace with your Cloudinary upload preset
-
-//             console.log(file)
-//             let loadingToast = toast.loading("Hang thight Uploading ...")
-//             try {
-//                 const response = await fetch('http://localhost:3000/uploadBanner', {
-//                     method: 'POST',
-//                     body: formData,
-//                 });
-//                 const data = await response.json();
-//                 console.log(data)
-//                 toast.dismiss(loadingToast);
-//                 setImage(data.secure_url);
-
-//             } catch (error) {
-//                 toast.dismiss(loadingToast);
-//                 console.error('Error uploading image: ', error);
-//             }
-//         }
-//     };
-//     return (
-//         <>
-//             <nav className="navbar" >
-//                 <Link to="/" className="flex-none w-10">
-//                     <img src={logo} />
-//                 </Link>
-//                 <p className="max-md:hidden text-black line-clamp-1 w-full " >New Blog</p>
-
-//                 <div className="flex gap-4 ml-auto ">
-//                     <button className="btn-dark py-2 ">Publish</button>
-//                     <button className="btn-light py-2 ">Save Draft</button>
-//                 </div>
-//             </nav>
-//             <Toaster />
-//             <AnimationWrapper >
-//                 <section>
-//                     <div className="mx-auto max-w-[900px] w-full ">
-//                         <div className="relative aspect-video hover:opacity-80  bg-white border-4 border-grey">
-//                             <label htmlFor="uploadBanner">
-//                                 <img src={image || defaultBanner} className="z-20" />
-//                                 <input id="uploadBanner"
-//                                     type="file"
-//                                     accept=".png,.jpg,.jpeg"
-//                                     hidden
-//                                     onChange={handleImageUpload} />
-//                             </label>
-//                         </div>
-//                     </div>
-//                 </section>
-//             </AnimationWrapper>
-//         </>
-
-//     )
-// }
-// export default BlogEditor;
