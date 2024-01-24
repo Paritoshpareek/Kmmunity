@@ -1,9 +1,12 @@
 # Fullstack MERN Blogging Website
 
+<<<<<<< HEAD
 Fork this repo of "MERN Blogging Website" to start following the video tutorial.
 
 Checkout website demo - [Demo](https://youtu.be/J7BGuuuvDDk)
 
+=======
+>>>>>>> 75593d28a55973d8d3ba67be49ec6a70cc51ee05
 This website features include -
 
 1. Modern Blog Editor using Editor JS.
