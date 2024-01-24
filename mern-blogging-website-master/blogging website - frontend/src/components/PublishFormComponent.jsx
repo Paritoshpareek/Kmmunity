@@ -107,8 +107,8 @@ const PublishForm = () => {
                 </button>
                 <div className="max-w-[550px] center">
                     <p className="text-dark-grey mb-1" >Preview</p>
-                    <div className="w-full aspect-video rounded-lg overflow-hidden bg-grey mt-4">
-                        <img src={banner} />
+                    <div className="w-full aspect-video rounded-lg overflow-hidden bg-grey mt-4  ">
+                        <img src={banner} className="object-scale-down" />
                     </div>
                     <h1 className="text-4xl font-medium mt-2 leading-tight line-clamp-2">{title}</h1>
                     <p className="font-gelasio line-clamp-2 text-xl leading-7 mt-4">{des}</p>

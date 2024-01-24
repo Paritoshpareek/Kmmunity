@@ -1,3 +1,5 @@
+import { useContext } from "react"
+import { ThemeContext } from "../App"
 
 const Img = ({ url, caption }) => {
     return (
@@ -33,7 +35,8 @@ const List = ({ style, items }) => {
         </ol>
     )
 }
-const Embed = ({ data }) => {
+const Embed = ({ data, theme }) => {
+
     if (data.service === 'youtube' || data.service === 'twitter') {
 
         return (
@@ -42,7 +45,7 @@ const Embed = ({ data }) => {
                     title={`${data.service} Embed`}
                     width={data.width}
                     height={data.height}
-                    src={data.service === 'twitter' ? `${data.embed}&theme=dark` : data.embed}
+                    src={data.service === 'twitter' && theme == 'dark' ? `${data.embed}&theme=dark` : data.embed}
                     allowFullScreen
                     className={`border-none rounded-lg shadow-md w-full h-full ${data.service === 'youtube' ? 'aspect-video' : 'aspect-square'}`}
                 ></iframe>
@@ -67,6 +70,8 @@ const Warning = ({ title, message }) => {
 
 const BlogContent = ({ block }) => {
 
+    let { theme } = useContext(ThemeContext)
+
     let { type, data } = block;
 
     if (type == "paragraph") {
@@ -88,7 +93,7 @@ const BlogContent = ({ block }) => {
     if (type == "list") {
         return <List style={data.style} items={data.items} />
     } if (type == "embed") {
-        return <Embed data={data} />
+        return <Embed data={data} theme={theme} />
     }
     if (type == "delimiter") {
         return <p className="text-2xl font-bold flex items-center justify-center tracking-wide">* * *</p>

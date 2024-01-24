@@ -17,7 +17,8 @@ export const blogStructure = {
     content: [],
     author: { personal_info: {} },
     banner: '',
-    publishedAt: ''
+    publishedAt: '',
+    minutesRead: ""
 
 }
 export const BlogContext = createContext({});
@@ -33,7 +34,7 @@ const BlogPage = () => {
     const [commentsWrapper, setCommentsWrapper] = useState(false);
     const [totalParentCommentsLoaded, setTotalParentCommentsLoaded] = useState(0);
 
-    let { title, content, banner, author: { personal_info: { fullname, username: author_username, profile_img } }, publishedAt } = blog;
+    let { title, content, banner, author: { personal_info: { fullname, username: author_username, profile_img } }, publishedAt, minutesRead } = blog;
 
     const fetchBlog = () => {
         axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-blog", { blog_id })

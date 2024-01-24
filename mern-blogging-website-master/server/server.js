@@ -42,6 +42,8 @@ admin.initializeApp({
 let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/; // regex for email
 let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/; // regex for password
 
+
+
 server.use(express.json());
 server.use(cors())
 
@@ -198,6 +200,7 @@ server.post("/google-auth", async (req, res) => {
       .then(async (decodedUser) => {
         //storing user details in db 
         let { email, name, picture } = decodedUser;
+        
         //upgrading low-quality user profile -> Stack Overflow suggested one
         picture = picture.replace("s96-c", "s384-c"); //384X384 px 
         //creating user in db after checking if already exists or not 
@@ -290,7 +293,7 @@ server.post('/latest-blogs',(req,res)=>{
   Blog.find({draft: false})
   .populate("author","personal_info.profile_img personal_info.username personal_info.fullname -_id" )
   .sort({"publishedAt":-1})
-  .select("blog_id title des content banner activity tags publishedAt -_id")
+  .select("blog_id title des content banner activity tags publishedAt minutesRead  -_id")
   .skip( (page-1) * maxLimit )
   .limit(maxLimit)
   .then(blogs=>{
@@ -346,7 +349,7 @@ server.post("/search-blogs",(req,res)=>{
   Blog.find(findQuery) 
   .populate("author","personal_info.profile_img personal_info.username personal_info.fullname -_id" )
   .sort({ "publishedAt": -1})
-  .select("blog_id title des banner activity tags publishedAt -_id")
+  .select("blog_id title des banner activity tags publishedAt minutesRead -_id")
   .skip((page-1) * maxLimit)
   .limit(maxLimit)
   .then(blogs=>{
@@ -475,8 +478,41 @@ server.post("/update-profile",verifyJWT,(req,res)=>{
   })
 });
 
+// read time funciton 
+async function calculateReadTime(contentArray) {
+  const wordsPerMinute = 275; // Adjust this value based on the average reading speed
 
-server.post('/create-blog', verifyJWT, (req, res) => {
+  let wordCount = 0;
+  
+  if (typeof contentArray === 'object' && Object.keys(contentArray).length > 0) {
+    const blocks = contentArray.blocks;
+
+    if (Array.isArray(blocks)) {
+      blocks.forEach(block => {
+        if (block && block.data) {
+          if (block.type === 'header' || block.type === 'paragraph' || block.type === 'quote') {
+            if (block.data.text) {
+              const words = block.data.text.split(/\s+/).filter(word => word.trim() !== '');
+              wordCount += words.length;
+            }
+          } else if (block.type === 'warning') {
+            if (block.data.title) {
+              const titleWords = block.data.title.split(/\s+/).filter(word => word.trim() !== '');
+              wordCount += titleWords.length;
+            }
+            if (block.data.message) {
+              const messageWords = block.data.message.split(/\s+/).filter(word => word.trim() !== '');
+              wordCount += messageWords.length;
+            }
+          }
+        }
+      });
+    }
+  }
+  const estimatedReadTimeInMinutes = Math.ceil(wordCount / wordsPerMinute) + 1;
+  return estimatedReadTimeInMinutes;
+}
+server.post('/create-blog', verifyJWT, async (req, res) => {
   let authorId = req.user;
   let { title, des, banner, tags, content, draft, id } = req.body; 
   
@@ -487,15 +523,14 @@ server.post('/create-blog', verifyJWT, (req, res) => {
   if(!draft){
      if (!des.length || des.length > 200) {
       return res.status(403).json({ error: "Blog description should be under 200 character limit" });
-    }else if (!banner.length) {
+    } else if (!banner.length) {
       return res.status(403).json({ error: "Blog Banner is required in order to publish" });
-    }else if (!content.blocks.length) {
+    } else if (!content.blocks.length) {
       return res.status(403).json({ error: "There must be some content to publish" });
     } else if (!tags.length || tags.length > 10) {
       return res.status(403).json({ error: "Tags are required in order to publish, Max limit is 10" });
     }
   }
-
 
   // Normalize tags to lowercase
   tags = tags.map(tag => tag.toLowerCase());
@@ -503,51 +538,128 @@ server.post('/create-blog', verifyJWT, (req, res) => {
   // Create a unique blog ID
   let blog_id = id || title.replace(/[^a-zA-Z0-9]/g, ' ').replace(/\s+/g, "-") + nanoid();
 
- // checking if we are submitting a exsisting blog by editing it 
+  const readTime = await calculateReadTime(content);
 
-  if(id){
-    Blog.findOneAndUpdate({blog_id:id}, {title,des, banner ,content , tags, draft:draft?draft : false})
-    .then(()=>{
-      return res.status(200).json({id:blog_id});
+  // checking if we are submitting an existing blog by editing it 
+  if (id) {
+    Blog.findOneAndUpdate({ blog_id: id }, { title, des, banner, content, tags, draft: draft ? draft : false, minutesRead: readTime })
+      .then(() => {
+        return res.status(200).json({ id: blog_id });
+      })
+      .catch(err => {
+        return res.status(500).json({ error: err.message })
+      })
+  } else {
+    // Create a new blog
+    let blog = new Blog({
+      title,
+      des,
+      banner,
+      content,
+      tags,
+      author: authorId,
+      blog_id,
+      draft: Boolean(draft),
+      minutesRead: readTime
+    });
+   
+
+    // Save the blog and update the user's blogs
+    blog.save().then(blog => {
+      let incrementBlog = draft ? 0 : 1;
+      User.findOneAndUpdate({ _id: authorId }, {
+        $inc: { "account_info.total_posts": incrementBlog },
+        $push: { "blogs": blog._id }
+      })
+        .then(user => {
+          return res.status(200).json({ id: blog.blog_id });
+        })
+        .catch(err => {
+          return res.status(500).json({ error: "Failed to update total posts number" });
+        });
     })
-    .catch(err=>{
-      return res.status(500).json({error:err.message})
-    })
+      .catch(err => {
+        return res.status(500).json({ error: err.message });
+      });
   }
-   else{
-  // Create a new blog
-   let blog = new Blog({
-     title,
-     des,
-     banner,
-     content,
-     tags,
-     author: authorId,
-     blog_id,
-     draft: Boolean(draft)
-   });
-
-   // Save the blog and update the user's blogs
-   blog.save().then(blog => {
-     let incrementBlog = draft ? 0 : 1;
-     User.findOneAndUpdate({ _id: authorId }, {
-       $inc: { "account_info.total_posts": incrementBlog },
-       $push: { "blogs": blog._id }
-     })
-     .then(user => {
-       return res.status(200).json({ id: blog.blog_id });
-     })
-     .catch(err => {
-       return res.status(500).json({ error: "Failed to update total posts number" });
-     });
-   })
-   .catch(err => {
-     return res.status(500).json({ error: err.message });
-   });
-  }
-
-
 });
+
+// server.post('/create-blog', verifyJWT, (req, res) => {
+//   let authorId = req.user;
+//   let { title, des, banner, tags, content, draft, id } = req.body; 
+  
+//   if (!title.length) {
+//     return res.status(403).json({ error: "you must provide a title" });
+//   } 
+
+//   if(!draft){
+//      if (!des.length || des.length > 200) {
+//       return res.status(403).json({ error: "Blog description should be under 200 character limit" });
+//     }else if (!banner.length) {
+//       return res.status(403).json({ error: "Blog Banner is required in order to publish" });
+//     }else if (!content.blocks.length) {
+//       return res.status(403).json({ error: "There must be some content to publish" });
+//     } else if (!tags.length || tags.length > 10) {
+//       return res.status(403).json({ error: "Tags are required in order to publish, Max limit is 10" });
+//     }
+//   }
+
+
+//   // Normalize tags to lowercase
+//   tags = tags.map(tag => tag.toLowerCase());
+
+//   // Create a unique blog ID
+//   let blog_id = id || title.replace(/[^a-zA-Z0-9]/g, ' ').replace(/\s+/g, "-") + nanoid();
+//   console.log("content is ->",content)
+
+//   const readTime = calculateReadTime(content);
+
+//  // checking if we are submitting a exsisting blog by editing it 
+
+//   if(id){
+//     Blog.findOneAndUpdate({blog_id:id}, {title,des, banner ,content , tags, draft:draft?draft : false , minutesRead :readTime})
+//     .then(()=>{
+//       return res.status(200).json({id:blog_id});
+//     })
+//     .catch(err=>{
+//       return res.status(500).json({error:err.message})
+//     })
+//   }
+//    else{
+//   // Create a new blog
+//    let blog = new Blog({
+//      title,
+//      des,
+//      banner,
+//      content,
+//      tags,
+//      author: authorId,
+//      blog_id,
+//      draft: Boolean(draft),
+//      minutesRead :readTime
+//    });
+// console.log("minutes read is ->",readTime)
+//    // Save the blog and update the user's blogs
+//    blog.save().then(blog => {
+//      let incrementBlog = draft ? 0 : 1;
+//      User.findOneAndUpdate({ _id: authorId }, {
+//        $inc: { "account_info.total_posts": incrementBlog },
+//        $push: { "blogs": blog._id }
+//      })
+//      .then(user => {
+//        return res.status(200).json({ id: blog.blog_id });
+//      })
+//      .catch(err => {
+//        return res.status(500).json({ error: "Failed to update total posts number" });
+//      });
+//    })
+//    .catch(err => {
+//      return res.status(500).json({ error: err.message });
+//    });
+//   }
+
+
+// });
 
 server.post("/get-blog",(req,res)=>{
 
@@ -557,7 +669,7 @@ server.post("/get-blog",(req,res)=>{
 
   Blog.findOneAndUpdate({blog_id}, {$inc:{"activity.total_reads":incrementVal}})
   .populate("author","personal_info.fullname personal_info.username personal_info.profile_img")
-  .select("title des content banner activity publishedAt blog_id tags ")
+  .select("title des content banner activity publishedAt blog_id tags minutesRead")
   .then(blog=>{
 
     User.findOneAndUpdate({"personal_info.username":blog.author.personal_info.username},{$inc:{"account_info.total_reads":incrementVal}

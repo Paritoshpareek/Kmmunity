@@ -179,7 +179,7 @@ const BlogEditor = () => {
                                 <img
                                     //src={image || defaultBanner}
                                     src={banner}
-                                    className="z-20"
+                                    className="z-20 object-scale-down"
                                     onError={handleImageError}
                                 />
                                 <input

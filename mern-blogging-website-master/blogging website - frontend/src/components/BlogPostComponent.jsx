@@ -2,7 +2,7 @@ import { getDay } from "../common/date";
 import { Link } from "react-router-dom";
 
 const BlogPostCard = ({ content, author }) => {
-    let { publishedAt, tags, title, des, banner, activity: { total_likes }, blog_id: id } = content;
+    let { publishedAt, tags, title, des, banner, activity: { total_likes }, blog_id: id, minutesRead } = content;
     let { fullname, profile_img, username } = author;
 
     return (
@@ -23,7 +23,7 @@ const BlogPostCard = ({ content, author }) => {
                         <i className="fi fi-rr-heart text-xl"></i>
                         {total_likes}
                     </span>
-                    <span className="ml-3 flex items-center "><p className="line-clamp-1 "  >13 min read</p></span>
+                    <span className="ml-3 flex items-center "><p className="line-clamp-1 "  >{minutesRead} min read</p></span>
                 </div>
 
             </div>
